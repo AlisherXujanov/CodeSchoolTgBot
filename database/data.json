@@ -4,66 +4,113 @@
       {
         "id": 1,
         "name": "Margherita",
-        "price": 12.0,
-        "description": "Fresh tomatoes, mozzarella, basil"
+        "price": 12,
+        "description": "Yangi pomidor, mozzarella, rayhon"
       },
       {
         "id": 2,
         "name": "Pepperoni",
-        "price": 14.0,
-        "description": "Pepperoni, mozzarella, tomato sauce"
+        "price": 14,
+        "description": "Pepperoni, mozzarella, pomidor sousi"
       },
       {
         "id": 3,
-        "name": "Hawaiian",
-        "price": 15.0,
-        "description": "Ham, pineapple, mozzarella"
+        "name": "Gavayskiy",
+        "price": 15,
+        "description": "Goʻsht, ananas, mozzarella"
       }
     ],
     "burgers": [
       {
         "id": 4,
-        "name": "Classic Burger",
-        "price": 10.0,
-        "description": "Beef patty, lettuce, tomato, onion"
+        "name": "Klassik Burger",
+        "price": 10,
+        "description": "Mol goʻshti, karam, pomidor, piyoz"
       },
       {
         "id": 5,
-        "name": "Cheese Burger",
-        "price": 11.0,
-        "description": "Beef patty, cheese, lettuce, tomato"
+        "name": "Pishloqli Burger",
+        "price": 11,
+        "description": "Mol goʻshti, pishloq, karam, pomidor"
       },
       {
         "id": 6,
-        "name": "Veggie Burger",
-        "price": 9.0,
-        "description": "Plant-based patty, lettuce, tomato"
+        "name": "Vegetarian Burger",
+        "price": 9,
+        "description": "Oʻsimlik asosidagi kotleta, karam, pomidor"
       }
     ],
     "drinks": [
       {
         "id": 7,
         "name": "Coca Cola",
-        "price": 3.0,
-        "description": "Classic soft drink"
+        "price": 3,
+        "description": "Klassik gazlangan ichimlik"
       },
       {
         "id": 8,
-        "name": "Coffee",
-        "price": 4.0,
-        "description": "Fresh brewed coffee"
+        "name": "Kofe",
+        "price": 4,
+        "description": "Yangi qaynatilgan kofe"
       },
       {
         "id": 9,
-        "name": "Orange Juice",
-        "price": 5.0,
-        "description": "Fresh squeezed orange juice"
+        "name": "Apelsin sharbati",
+        "price": 5,
+        "description": "Yangi siqilgan apelsin sharbati"
       }
     ]
   },
-  "orders": {},
+  "orders": {
+    "1": {
+      "order_id": 1,
+      "user_id": 5171353394,
+      "items": {
+        "2": 3,
+        "5": 1
+      },
+      "total": 53,
+      "discount": 0,
+      "delivery_fee": 2.5,
+      "promo_code": null,
+      "status": "pending",
+      "delivery_address": null,
+      "notes": null,
+      "created_at": "2026-02-12T11:52:38.097601",
+      "updated_at": "2026-02-12T11:52:38.097613"
+    }
+  },
   "settings": {
     "delivery_fee": 2.5,
-    "min_order": 15.0
-  }
+    "min_order": 15
+  },
+  "users": {
+    "5171353394": {
+      "user_id": 5171353394,
+      "loyalty_points": 53,
+      "total_orders": 1,
+      "addresses": [],
+      "favorites": [],
+      "preferences": {},
+      "created_at": "2026-02-12T11:50:27.404701",
+      "first_name": "Alisher",
+      "last_name": "Khujanov",
+      "username": "Alisher_Khujanov"
+    }
+  },
+  "carts": {
+    "5171353394": {
+      "items": {},
+      "total": 0,
+      "discount": 0,
+      "promo_code": null,
+      "created_at": "2026-02-12T11:52:38.097632"
+    }
+  },
+  "reservations": {},
+  "reviews": {},
+  "promo_codes": {},
+  "order_counter": 2,
+  "reservation_counter": 1,
+  "review_counter": 1
 }

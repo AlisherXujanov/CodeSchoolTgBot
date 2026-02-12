@@ -3,9 +3,17 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 
 from database.db_helper import db
 from keyboards.main_keyboard import get_main_keyboard, get_back_keyboard
+from utils.decorators import is_admin
 
 # Create router instance
 router = Router()
+
+# Category display names (Uzbek)
+CATEGORY_NAMES = {
+    "pizza": "Pitsa",
+    "burgers": "Burgerlar",
+    "drinks": "Ichimliklar",
+}
 
 
 @router.callback_query(F.data == "menu")
@@ -14,22 +22,22 @@ async def show_menu_categories(callback: CallbackQuery):
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [
             InlineKeyboardButton(
-                text="🍕 Pizza", callback_data="category_pizza"),
+                text="🍕 Pitsa", callback_data="category_pizza"),
             InlineKeyboardButton(
-                text="🍔 Burgers", callback_data="category_burgers")
+                text="🍔 Burgerlar", callback_data="category_burgers")
         ],
         [
             InlineKeyboardButton(
-                text="🥤 Drinks", callback_data="category_drinks"),
-            InlineKeyboardButton(text="🛒 Cart", callback_data="cart")
+                text="🥤 Ichimliklar", callback_data="category_drinks"),
+            InlineKeyboardButton(text="🛒 Savat", callback_data="cart")
         ],
         [
-            InlineKeyboardButton(text="⬅️ Back", callback_data="back")
+            InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back")
         ]
     ])
 
     await callback.message.edit_text(
-        "🍽️ <b>Choose a category:</b>",
+        "🍽️ <b>Kategoriyani tanlang:</b>",
         reply_markup=keyboard
     )
     await callback.answer()
@@ -42,11 +50,12 @@ async def show_category_items(callback: CallbackQuery):
     items = db.get_menu_category(category)
 
     if not items:
-        await callback.answer("This category is empty!", show_alert=True)
+        await callback.answer("Bu kategoriya boʻsh!", show_alert=True)
         return
 
     keyboard_buttons = []
-    text = f"🍽️ <b>{category.title()}</b>\n\n"
+    category_title = CATEGORY_NAMES.get(category, category.title())
+    text = f"🍽️ <b>{category_title}</b>\n\n"
 
     for item in items:
         text += f"<b>{item['name']}</b> - ${item['price']:.2f}\n"
@@ -54,13 +63,13 @@ async def show_category_items(callback: CallbackQuery):
 
         keyboard_buttons.append([
             InlineKeyboardButton(
-                text=f"➕ Add {item['name']}",
+                text=f"➕ Qoʻshish: {item['name']}",
                 callback_data=f"add_{item['id']}"
             )
         ])
 
     keyboard_buttons.append([
-        InlineKeyboardButton(text="⬅️ Back to Menu", callback_data="menu")
+        InlineKeyboardButton(text="⬅️ Menyuga qaytish", callback_data="menu")
     ])
 
     keyboard = InlineKeyboardMarkup(inline_keyboard=keyboard_buttons)
@@ -76,120 +85,28 @@ async def add_to_cart(callback: CallbackQuery):
     item = db.get_item_by_id(item_id)
 
     if not item:
-        await callback.answer("Item not found!", show_alert=True)
+        await callback.answer("Mahsulot topilmadi!", show_alert=True)
         return
 
     db.add_to_cart(callback.from_user.id, item_id)
 
-    await callback.answer(f"✅ {item['name']} added to cart!", show_alert=True)
+    await callback.answer(f"✅ {item['name']} savatga qoʻshildi!", show_alert=True)
 
 
-@router.callback_query(F.data == "cart")
-async def show_cart(callback: CallbackQuery):
-    """Show user's cart"""
-    cart = db.get_cart(callback.from_user.id)
-
-    if not cart["items"]:
-        await callback.message.edit_text(
-            "🛒 <b>Your cart is empty</b>\n\n"
-            "Add some items from the menu!",
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(
-                    text="🍽️ Browse Menu", callback_data="menu")],
-                [InlineKeyboardButton(text="⬅️ Back", callback_data="back")]
-            ])
-        )
-        await callback.answer()
-        return
-
-    text = "🛒 <b>Your Cart:</b>\n\n"
-    total = 0
-
-    for item_id, quantity in cart["items"].items():
-        item = db.get_item_by_id(int(item_id))
-        if item:
-            item_total = item["price"] * quantity
-            total += item_total
-            text += f"<b>{item['name']}</b>\n"
-            text += f"${item['price']:.2f} x {quantity} = ${item_total:.2f}\n\n"
-
-    delivery_fee = db.data.get("settings", {}).get("delivery_fee", 2.50)
-    text += f"<b>Subtotal:</b> ${total:.2f}\n"
-    text += f"<b>Delivery:</b> ${delivery_fee:.2f}\n"
-    text += f"<b>Total:</b> ${total + delivery_fee:.2f}"
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅ Checkout", callback_data="checkout"),
-            InlineKeyboardButton(text="🗑️ Clear Cart",
-                                 callback_data="clear_cart")
-        ],
-        [
-            InlineKeyboardButton(text="🍽️ Add More Items",
-                                 callback_data="menu"),
-            InlineKeyboardButton(text="⬅️ Back", callback_data="back")
-        ]
-    ])
-
-    await callback.message.edit_text(text, reply_markup=keyboard)
-    await callback.answer()
-
-
-@router.callback_query(F.data == "clear_cart")
-async def clear_cart(callback: CallbackQuery):
-    """Clear user's cart"""
-    db.clear_cart(callback.from_user.id)
-    await callback.answer("🗑️ Cart cleared!", show_alert=True)
-    await show_cart(callback)
-
-
-@router.callback_query(F.data == "checkout")
-async def checkout(callback: CallbackQuery):
-    """Process checkout"""
-    cart = db.get_cart(callback.from_user.id)
-
-    if not cart["items"]:
-        await callback.answer("Your cart is empty!", show_alert=True)
-        return
-
-    # Here you would integrate with payment systems
-    # For now, we'll just show order confirmation
-
-    order_text = "🎉 <b>Order Confirmed!</b>\n\n"
-    order_text += "📞 We'll call you shortly to confirm delivery details.\n"
-    order_text += "⏱️ Estimated delivery: 30-45 minutes\n\n"
-    order_text += "<b>Order Summary:</b>\n"
-
-    for item_id, quantity in cart["items"].items():
-        item = db.get_item_by_id(int(item_id))
-        if item:
-            order_text += f"• {item['name']} x{quantity}\n"
-
-    delivery_fee = db.data.get("settings", {}).get("delivery_fee", 2.50)
-    order_text += f"\n<b>Total: ${cart['total'] + delivery_fee:.2f}</b>"
-
-    # Clear the cart after order
-    db.clear_cart(callback.from_user.id)
-
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="🏠 Main Menu", callback_data="back")]
-    ])
-
-    await callback.message.edit_text(order_text, reply_markup=keyboard)
-    await callback.answer()
+# Cart handlers moved to handlers/cart.py
 
 
 @router.callback_query(F.data == "contact")
 async def show_contact(callback: CallbackQuery):
     """Show contact information"""
     contact_text = """
-📞 <b>Contact Information</b>
+📞 <b>Aloqa maʼlumotlari</b>
 
-📱 Phone: +1 (555) 123-4567
+📱 Telefon: +1 (555) 123-4567
 📧 Email: info@restaurant.com
-🌐 Website: www.restaurant.com
+🌐 Vebsayt: www.restaurant.com
 
-<b>Follow us:</b>
+<b>Bizni kuzating:</b>
 📘 Facebook: @restaurant
 📷 Instagram: @restaurant
 🐦 Twitter: @restaurant
@@ -206,10 +123,10 @@ async def show_contact(callback: CallbackQuery):
 async def show_location(callback: CallbackQuery):
     """Show restaurant location"""
     await callback.message.edit_text(
-        "📍 <b>Our Location</b>\n\n"
+        "📍 <b>Bizning joylashuvimiz</b>\n\n"
         "123 Main Street\n"
         "City Center, State 12345\n\n"
-        "We're located in the heart of downtown!",
+        "Shahar markazida joylashganmiz!",
         reply_markup=get_back_keyboard()
     )
     # Send actual location
@@ -224,13 +141,13 @@ async def show_location(callback: CallbackQuery):
 async def show_hours(callback: CallbackQuery):
     """Show opening hours"""
     hours_text = """
-⏰ <b>Opening Hours</b>
+⏰ <b>Ish vaqti</b>
 
-<b>Monday - Thursday:</b> 11:00 AM - 10:00 PM
-<b>Friday - Saturday:</b> 11:00 AM - 11:00 PM
-<b>Sunday:</b> 12:00 PM - 9:00 PM
+<b>Dushanba - Payshanba:</b> 11:00 - 22:00
+<b>Juma - Shanba:</b> 11:00 - 23:00
+<b>Yakshanba:</b> 12:00 - 21:00
 
-<b>Kitchen closes 30 minutes before closing time</b>
+<b>Oshxona yopilishdan 30 daqiqa oldin ishlashni toʻxtatadi</b>
     """
 
     await callback.message.edit_text(
@@ -244,8 +161,8 @@ async def show_hours(callback: CallbackQuery):
 async def go_back(callback: CallbackQuery):
     """Go back to main menu"""
     await callback.message.edit_text(
-        f"👋 Welcome back, {callback.from_user.full_name}!\n\n"
-        f"What would you like to do?",
-        reply_markup=get_main_keyboard()
+        f"👋 Qaytganingiz bilan, {callback.from_user.full_name}!\n\n"
+        f"Nima qilmoqchisiz?",
+        reply_markup=get_main_keyboard(callback.from_user.id)
     )
     await callback.answer()
